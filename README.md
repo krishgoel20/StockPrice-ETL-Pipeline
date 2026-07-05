@@ -11,6 +11,8 @@ StockPulse is a data engineering pipeline that:
 - Runs automatically on a daily schedule
 
 ## Architecture
+
+```
 yfinance API
 ↓ Extract (extract.py)
 MySQL: raw_prices
@@ -20,6 +22,7 @@ MySQL: processed_metrics
 MySQL: ai_insights
 ↓ Serve (api/main.py)
 REST API endpoints
+```
 
 ## Tech Stack
 - Python, yfinance, MySQL, Groq API (LLaMA 3.3-70b), FastAPI, schedule
