@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+yfinance
+mysql-connector-python
+python-dotenv
+groq
+schedule
