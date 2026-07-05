@@ -1,7 +1,7 @@
 # StockPulse 📈
 A stock price ETL pipeline with AI-generated market insights.
 
-## What It Does
+## What it does
 StockPulse is a data engineering pipeline that:
 - Extracts daily stock price data for AAPL, GOOGL, and MSFT using yfinance
 - Transforms raw prices into meaningful metrics (daily return %, 7-day moving average, volatility)
@@ -40,6 +40,6 @@ REST API endpoints
 | `GET /metrics/{ticker}` | Processed metrics |
 | `GET /insights/{ticker}` | AI market summary |
 
-## Known Limitations
+## Limitations
 - No idempotency check — running the pipeline multiple times inserts duplicate rows
 - Scheduling runs locally only — not deployed to a cloud scheduler
