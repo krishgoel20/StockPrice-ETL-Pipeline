@@ -16,14 +16,26 @@ def get_db_connection():
 
 def fetch_and_store(ticker, period="5d"):
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(buffered=True)
 
     stock = yf.Ticker(ticker)
     df = stock.history(period=period)
 
+    inserted = 0
+    skipped = 0
+
     for date, row in df.iterrows():
         cursor.execute("""
-            INSERT INTO raw_prices 
+            SELECT id FROM raw_prices
+            WHERE ticker = %s AND trade_date = %s
+        """, (ticker, date.date()))
+
+        if cursor.fetchone():
+            skipped += 1
+            continue
+
+        cursor.execute("""
+            INSERT INTO raw_prices
             (ticker, trade_date, open_price, high_price, low_price, close_price, volume)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
         """, (
@@ -35,11 +47,12 @@ def fetch_and_store(ticker, period="5d"):
             round(float(row["Close"]), 2),
             int(row["Volume"])
         ))
+        inserted += 1
 
     conn.commit()
     cursor.close()
     conn.close()
-    print(f"[{datetime.now()}] Stored {len(df)} rows for {ticker}")
+    print(f"[{datetime.now()}] {ticker} — Inserted: {inserted}, Skipped: {skipped}")
 
 if __name__ == "__main__":
     tickers = ["AAPL", "GOOGL", "MSFT"]

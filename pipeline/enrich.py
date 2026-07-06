@@ -16,7 +16,7 @@ def get_db_connection():
 
 def generate_and_store(ticker):
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(dictionary=True, buffered=True)
 
     cursor.execute("""
         SELECT trade_date, daily_return_pct, moving_avg_7d, volatility
@@ -32,15 +32,26 @@ def generate_and_store(ticker):
         print(f"No processed data found for {ticker}")
         return
 
+    cursor.execute("""
+        SELECT id FROM ai_insights
+        WHERE ticker = %s AND insight_date = %s
+    """, (ticker, row["trade_date"]))
+
+    if cursor.fetchone():
+        print(f"[{datetime.now()}] {ticker} — Insight already exists, skipping")
+        cursor.close()
+        conn.close()
+        return
+
     prompt = f"""
-    You are a financial analyst. Based on the following stock metrics for {ticker}, 
+    You are a financial analyst. Based on the following stock metrics for {ticker},
     write a concise 2-3 sentence market summary for a data dashboard.
-    
+
     Date: {row['trade_date']}
     Daily Return: {row['daily_return_pct']}%
     7-Day Moving Average: ${row['moving_avg_7d']}
     Volatility: {row['volatility']}
-    
+
     Be factual, concise, and professional. No bullet points.
     """
 
@@ -64,7 +75,7 @@ def generate_and_store(ticker):
     conn.commit()
     cursor.close()
     conn.close()
-    print(f"[{datetime.now()}] Insight stored for {ticker}")
+    print(f"[{datetime.now()}] {ticker} — Insight stored")
     print(f"Summary: {summary}\n")
 
 if __name__ == "__main__":

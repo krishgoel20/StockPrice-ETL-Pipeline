@@ -15,7 +15,7 @@ def get_db_connection():
 
 def calculate_and_store(ticker):
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(dictionary=True, buffered=True)
 
     cursor.execute("""
         SELECT trade_date, open_price, close_price
@@ -31,8 +31,19 @@ def calculate_and_store(ticker):
         return
 
     closes = [row["close_price"] for row in rows]
+    inserted = 0
+    skipped = 0
 
     for i, row in enumerate(rows):
+        cursor.execute("""
+            SELECT id FROM processed_metrics
+            WHERE ticker = %s AND trade_date = %s
+        """, (ticker, row["trade_date"]))
+
+        if cursor.fetchone():
+            skipped += 1
+            continue
+
         daily_return = round(
             ((float(row["close_price"]) - float(row["open_price"])) / float(row["open_price"])) * 100, 4
         )
@@ -58,11 +69,12 @@ def calculate_and_store(ticker):
             moving_avg,
             volatility
         ))
+        inserted += 1
 
     conn.commit()
     cursor.close()
     conn.close()
-    print(f"[{datetime.now()}] Transformed {len(rows)} rows for {ticker}")
+    print(f"[{datetime.now()}] {ticker} — Inserted: {inserted}, Skipped: {skipped}")
 
 if __name__ == "__main__":
     tickers = ["AAPL", "GOOGL", "MSFT"]
